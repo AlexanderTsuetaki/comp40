@@ -1,0 +1,42 @@
+***** Writing test 'halt'.
+op 7, ra 0, rb 0, rc 0 
+inst: 70000000
+***** Writing test 'halt-verbose'.
+op 7, ra 0, rb 0, rc 0 
+inst: 70000000
+ra 1, val 66 
+inst: d2000042
+op 10, ra 0, rb 0, rc 1 
+inst: a0000001
+ra 1, val 97 
+inst: d2000061
+op 10, ra 0, rb 0, rc 1 
+inst: a0000001
+ra 1, val 100 
+inst: d2000064
+op 10, ra 0, rb 0, rc 1 
+inst: a0000001
+ra 1, val 33 
+inst: d2000021
+op 10, ra 0, rb 0, rc 1 
+inst: a0000001
+ra 1, val 10 
+inst: d200000a
+op 10, ra 0, rb 0, rc 1 
+inst: a0000001
+***** Writing test 'add'.
+op 3, ra 1, rb 2, rc 3 
+inst: 30000053
+op 7, ra 0, rb 0, rc 0 
+inst: 70000000
+***** Writing test 'print-six'.
+ra 1, val 48 
+inst: d2000030
+ra 1, val 6 
+inst: d2000006
+op 3, ra 3, rb 1, rc 2 
+inst: 300000ca
+op 10, ra 0, rb 0, rc 3 
+inst: a0000003
+op 7, ra 0, rb 0, rc 0 
+inst: 70000000

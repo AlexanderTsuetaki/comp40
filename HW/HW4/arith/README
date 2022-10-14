@@ -1,0 +1,50 @@
+*******************************************************************************
+*                      Comp 40 - HW4 - Arith                                  *
+* Authors: Matthew Cook           -   mcook03                                 *
+*          Alexander Tsuetaki     -   atsuet01                                *
+* Date Modified: 10/25/19                                                     *
+* Time Used: 25 hrs - 6hrs anaylisis, 19 hours solving                        *
+* *****************************************************************************
+
+Acknowledgements: 
+
+Purpose: To learn how to bitpack values to compress data and work at low level
+         machine representations of numbers. 
+         To praise the stepwise refinement technique where actually test our
+         code as we make it.
+          
+Files: 40image.c : the main function to create the compression files
+       compressHelp.h : the header file for helper methods to compress an image
+       compress40.c : the implementation of the compression of the images      
+       uncompress40.h : the header file for the methods to decompress an image
+       uncompress40.c : the implimentation to decompress an image
+       wordConsts.h : constains the structs and include statements
+       bitpack.h : the header file for the methods to pack or unpack 
+                   bits into 64 bit or 32 bit signed or unsigned words 
+       bitpack.c : the implimentation of the methods to pack or unpack
+                 : bits in words 
+
+Data structures:
+     UArray2b_t: 4 blocked uarrays are used int the compression and 
+                 decompression. In compression there is a blocked array of
+                 RGB values of pnmrgb, an array of XYZ values derived from the
+                 RGB value, an array of pix4 values with values a,b,c,d,pb,pr
+                 derived from XYZ values, and an array of blocked words 
+                 derived from pix4 values.
+
+                 for decompression there are these 4 arrays however their 
+                 sources are deversed i.e XYZ values are derived form pix4
+
+     Pix4: a struct with values of a,b,c,d,pb,pr the chroma and brightness 
+           values of 4 pixels that are adveraged together
+
+     compXYZ: a struct with values X, Y, Z which represent the CIE XYZ color
+             space where we have y,pb,pr in liue of XYZ.
+
+
+Implementation:
+	All programs are properly implemented, although some areas could be
+        made more efficient. For example we could do the transformation take
+        less space and time if we used fewer UArrays and maping functions
+
+

@@ -1,0 +1,36 @@
+Block-Major-Mapping:
+Case [90]: took 63536565 nanoseconds (0 seconds)
+Row-Major-Mapping:
+Case [90]: took 19067703 nanoseconds (0 seconds)
+Col-Major-Mapping:
+Case [90]: took 25667598 nanoseconds (0 seconds)
+Col-Major-Mapping:
+Case [90]: took 2535976975 nanoseconds (2 seconds)
+Block-Major-Mapping:
+Case [90]: took 42314009432 nanoseconds (42 seconds)
+Row-Major-Mapping:
+Case [90]: took 10656303798 nanoseconds (10 seconds)
+Col-Major-Mapping:
+Case [90]: took 17408622872 nanoseconds (17 seconds)
+Block-Major-Mapping:
+Case [90]: took 64193330 nanoseconds (0 seconds)
+Block-Major-Mapping:
+Case [90]: took 13181653232 nanoseconds (13 seconds)
+Block-Major-Mapping:
+Case [90]: took 5794661346 nanoseconds (5 seconds)
+Block-Major-Mapping:
+Case [90]: took 5544385888 nanoseconds (5 seconds)
+Block-Major-Mapping:
+Case [90]: took 5283439589 nanoseconds (5 seconds)
+Block-Major-Mapping:
+Case [90]: took 5414428712 nanoseconds (5 seconds)
+Block-Major-Mapping:
+Case [90]: took 5353292800 nanoseconds (5 seconds)
+Block-Major-Mapping:
+Case [90]: took 5122016280 nanoseconds (5 seconds)
+Block-Major-Mapping:
+Case [90]: took 5127643616 nanoseconds (5 seconds)
+Col-Major-Mapping:
+Case [90]: took 3369861848 nanoseconds (3 seconds)
+Block-Major-Mapping:
+Case [180]: took 5195674370 nanoseconds (5 seconds)

@@ -1,0 +1,45 @@
+Timings
+
+mobo.ppm 8160*6120
+
+Row-Major-Mapping:
+Case rotate 90: took 3135945933 nanoseconds (3 seconds)
+
+Case rotate 180: took 2463739744 nanoseconds (2 seconds)
+
+Case rotate 270: took 3163375849 nanoseconds (3 seconds)
+
+Case transpose: took 2959709731 nanoseconds (2 seconds)
+
+Case flip horizontal: took 2256383694 nanoseconds (2 seconds)
+
+Case flip vertical: took 2260592146 nanoseconds (2 seconds)
+
+
+Col-Major-Mapping:
+Case rotate 90: took 3312265832 nanoseconds (3 seconds)
+
+Case rotate 180: took 4804851010 nanoseconds (4 seconds)
+
+Case rotate 270: took 3296818370 nanoseconds (3 seconds)
+
+Case transpose: took 3261958145 nanoseconds (3 seconds)
+
+Case flip horizontal: took 4296161668 nanoseconds (4 seconds)
+
+Case flip vertical: took 4447978749 nanoseconds (4 seconds)
+
+
+Block-Major-Mapping:
+Block-Major-Mapping:
+Case [90]: took 5165987762 nanoseconds (5 seconds)
+Block-Major-Mapping:
+Case [180]: took 5163985074 nanoseconds (5 seconds)
+Block-Major-Mapping:
+Case [270]: took 5013118031 nanoseconds (5 seconds)
+Block-Major-Mapping:
+Case [69]: took 4952004895 nanoseconds (4 seconds)
+Block-Major-Mapping:
+Case [420]: took 4876265199 nanoseconds (4 seconds)
+Block-Major-Mapping:
+Case [720]: took 4883197560 nanoseconds (4 seconds)

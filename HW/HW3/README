@@ -1,0 +1,50 @@
+*******************************************************************************
+*                      Comp 40 - HW3 - Locality                               *
+* Authors: Gabriel McNinch        -   gmcnin02                                *
+*          Alexander Tsuetaki     -   atsuet01                                *
+* Date Modified: 10/9/19                                                      *
+* Time Used: 21 hrs                                                           *
+* *****************************************************************************
+
+Acknowledgments: Katelyn; Jonathan; Jessica Wang
+
+Purpose: To lean about locality and prove its superiority to other searching
+         methods.
+         To learn about the cache and how it effects the performance of a
+         program.
+         To implement blocked 2d arrays and polymorphic image rotation.
+         To measure the actual performance of programs with different mapping
+         methods(row, col, blocked)
+
+Files:
+        uarray2b.c: a file that contains the UArray2b_T object and an
+                    implementation to use the values stored in it
+        ppmtrans.c: a file that implements different mapping methods to
+                    transform a picture
+        a2plain.c: a file that contains the methods that call array2.c methods
+                   to allow ppmtrans.c to call functions without directly
+                   calling them from array2.c
+        time.txt: a file that constains the times in which each mapping time
+                  completed a picture transformation
+
+Data structures:
+        UArray2_T: for use in mapping with row or col major
+                    UArray2_T is from uarray2.c which was implemented by the
+                    administration
+        UArray2b_T: for use in mapping with block major
+                    UArray2b_T is from UArray2b.c which was implemented be the
+                    students writing this README default block size is 64k or
+                    256 per side
+Implementation:
+        All programs are properly implemented, although some areas could be
+        made more efficient
+        Our block-major mapping is under-preforming and may be due to our
+        implementation of the UArray2b_T or UArray2b_map being inefficient
+        due to the storage method or multiple for loops respectively.
+
+
+PC information:
+        see cpuinfo.txt for pc specs
+
+
+Time info:

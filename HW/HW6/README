@@ -1,0 +1,12 @@
+testfiles
+
+halt: test the halt command, does no immediatly, without delay.
+
+add: adds some numbers and prints them out.
+
+print_six: prints out the number 6 after adding numbers to get the ascii 
+           representation of it
+
+load_prog: uses the load_prog command to jump to a certian instruction which
+           is sorrounded by halt statements. 
+

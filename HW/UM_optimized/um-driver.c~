@@ -1,0 +1,832 @@
+#include <seq.h>
+#include <inttypes.h>
+#include <bitpack.h>
+#include <stdio.h>
+#include <assert.h>
+#include <stdlib.h>
+
+typedef uint32_t seg_id;
+typedef uint32_t word;
+#define HALT 0x70000000
+
+void test_um();
+
+word *get_prog(FILE *file);
+
+void run_program(FILE *file);
+
+Seq_T setup_memory(word *prog);
+
+Seq_T setup_recycle();
+
+uint32_t *setup_registers();
+
+word get_instruction(Seq_T mem, uint32_t prog_counter);
+
+int parse_instruction(Seq_T mem, Seq_T freed_mem, uint32_t *registers,
+                        word inst, uint32_t *count);
+
+void run_instruction(Seq_T mem, Seq_T freed_mem, uint32_t *registers,seg_id op,
+                        seg_id rega, seg_id regb, seg_id regc);
+
+
+seg_id translate_address(Seq_T ids, uint32_t id);
+
+//op code instructions + helpers
+void conditional_move(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc);
+
+void segmented_load(Seq_T mem, uint32_t * regs, seg_id rega, seg_id regb,
+                        seg_id regc);
+
+void segmented_store(Seq_T mem, uint32_t * regs,  seg_id rega, seg_id regb,
+                        seg_id regc);
+
+void addition(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc);
+
+void multiplication(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc);
+
+void division(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc);
+
+void nand(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc);
+
+void map_segment(Seq_T mem, uint32_t * regs, Seq_T freed_mem, seg_id rega,
+                 seg_id regb, seg_id regc);
+
+seg_id map_segment_helper(Seq_T mem, Seq_T freed_mem, word *seg);
+
+void unmap_segment(Seq_T mem, uint32_t * regs, Seq_T freed_mem, seg_id rega,
+                   seg_id regb, seg_id regc);
+
+void unmap_segment_helper(Seq_T mem, Seq_T freed_mem, seg_id index);
+
+void output(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc);
+
+void input(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc);
+
+void load_program(Seq_T mem, uint32_t * regs, uint32_t *p_counter, seg_id rega,
+                  seg_id regb, seg_id regc);
+
+void load_value(uint32_t * regs, seg_id rega, uint32_t value);
+
+
+/*
+main
+Purpose: runs the program
+Args: argc: the number of arguments being passed into the function
+      argv: the arguments
+Returns: an int denoting success or failure in the running of the run_program
+        it is in pristine condition.
+*/
+int main (int argc, char *argv[])
+{
+    if(argc != 2) {
+        fprintf(stderr, "Incorrect number of arguments. Exiting.\n");
+        exit(EXIT_FAILURE);
+    }
+    FILE *file = fopen(argv[1],"r");
+    if (!file) {
+        fprintf(stderr, "No file found. Exiting.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    run_program(file);
+
+    fclose(file);
+    return 0;
+}
+
+
+/*
+get_prog
+Purpose: to get the instructions from a file and populate an array to run them
+Args: file: the file contining the instructions
+Returns: an array of words containing all the instructions to run a program
+*/
+word *get_prog(FILE *file) {
+    Seq_T char_seq = Seq_new(64);
+    char c = fgetc(file);
+    while (!feof(file)) {
+        char *chr_ptr = malloc(1);
+        *chr_ptr = c;
+        Seq_addhi(char_seq, chr_ptr);
+
+        c = fgetc(file);
+    }
+    uint32_t length = Seq_length(char_seq);
+    assert(length % 4 == 0);
+    word *wordarray = malloc((length / 4) * sizeof(word));
+    word temp = 0;
+    for(uint32_t i = 0; i < length; i++){
+        char *c = Seq_get(char_seq, i);
+        temp = Bitpack_newu(temp, 8 , 24 - 8 * (i % 4), (*c) & 0xff);
+        //temp = (temp << (uint32_t)8) | ((*c)&0xff);
+        if(i % 4 == 3){
+	    wordarray[i >> 2] = temp; // switched divide by 4 to shift 2
+            temp = 0;
+        }
+        free(c);
+    }
+    Seq_free(&char_seq);
+    return wordarray;
+}
+
+/*
+run_program
+Purpose: to run the .um program instructions
+Args: file: a file comtaining the instructions for a program
+Returns: none
+*/
+void run_program(FILE *file) {
+	char *char_seq = malloc(64);
+	char chr = fgetc(file);
+	uint32_t char_ctr = 0;
+	uint32_t max_len = 64;
+	while (!feof(file)) {
+		char_seq[char_ctr++] = chr;
+		if (char_ctr == max_len) {
+			char *temp_seq = malloc(max_len);
+			for (uint32_t i = 0; i < max_len; i++)
+				temp_seq[i] = char_seq[i];
+			free(char_seq);
+			char_seq = NULL;
+			char_seq = malloc(max_len * 2);
+			for (uint32_t i = 0; i < max_len; i++)
+				char_seq[i] = temp_seq[i];
+			max_len *= 2;
+			free(temp_seq);
+			temp_seq = NULL;
+		}
+		chr = fgetc(file);
+	}
+	assert(char_ctr % 4 == 0);
+	word *prog= malloc((char_ctr / 4) * sizeof(word));
+	word temp = 0;
+	for(uint32_t i = 0; i < char_ctr; i++){
+		temp = Bitpack_newu(temp, 8 , 24 - 8 * (i % 4), 
+				    (char_seq[i]) & 0xff);
+		if(i % 4 == 3){
+			prog[i >> 2] = temp; // switched divide by 4 to shift 2
+			temp = 0;
+		}
+	}
+	free(char_seq);
+	uint32_t mem_max_len = 256;
+	uint32_t mem_curr_len = 0;
+	uint32_t **mem = malloc(mem_max_len * sizeof(uint32_t *));
+	mem[mem_curr_len++] = prog;
+
+	uint32_t freed_mem_max_len = 128;
+	uint32_t freed_mem_curr_len = 0;
+	uint32_t *freed_mem = malloc(mem_max_len * sizeof(uint32_t));
+
+	uint32_t prog_counter = 0;
+
+	uint32_t *registers = malloc(8*sizeof(uint32_t));
+	for (int i = 0; i < 8; i++){
+		registers[i] = 0;
+	}
+
+	while (1) {
+		word inst = (mem[0])[prog_counter];
+		prog_counter++;
+
+		uint32_t op = inst >> 28;
+		if (op == 7) {
+			free(prog);
+			mem[0] = NULL;
+			break;
+		}
+		if (op == 13){
+			uint32_t a  = inst << 4;
+			a = a >> 29;
+			uint32_t value  = inst << 7;
+			value = value >> 7;
+			registers[a] = value;
+		}
+	    
+		uint32_t a  = inst << 23;
+		a = a >> 29;
+		uint32_t b  = inst << 26;
+		b = b >> 29;
+		uint32_t c  = inst << 29;
+		c = c >> 29;
+	    
+		if (op == 12) {
+			if (registers[b] != 0)
+				mem[0] = mem[registers[b]];
+			prog_counter = registers[c];
+		}
+		else{
+			if (op==1) {
+				registers[a] = (mem[registers[b]])[registers[c]];
+			}
+			if (op==2) {
+				(mem[registers[a]])[registers[b]] = registers[c];
+			}
+			if (op==8) {
+				//fprintf(stderr, "%u\n", registers[c]);
+				uint32_t *seg = malloc((registers[c])*sizeof(uint32_t));
+				for(seg_id i = 0; i < registers[c]; i++)
+					seg[i] = 0;
+				
+				if(freed_mem_curr_len > 0) {
+					seg_id index = freed_mem[freed_mem_curr_len-1];
+					freed_mem[freed_mem_curr_len-1] = 0;
+					freed_mem_curr_len--;
+					mem[index] = seg;
+					registers[b] = index;
+				}
+				else{
+					mem[mem_curr_len++] = seg;
+					if (mem_curr_len == mem_max_len) {
+						uint32_t **temp_seq = malloc(mem_max_len * sizeof(uint32_t *));
+						for (uint32_t i = 0; i < mem_max_len; i++)
+							temp_seq[i] = mem[i];
+						free(mem);
+						mem = NULL;
+						mem = malloc(mem_max_len*2);
+						for (uint32_t i = 0; i < mem_max_len; i++)
+							mem[i] = temp_seq[i];
+						mem_max_len *= 2;
+						//free(temp_seq);
+						temp_seq = NULL;
+					}
+					registers[b] = mem_curr_len-1;
+				}
+			}
+			if (op==9) {
+				seg_id index = registers[c];
+				if(mem[index] == NULL){
+					fprintf(stderr, "Double free at %d\n", index);
+					uint32_t arr[1] = {HALT};
+					mem[0] = arr;
+					return;
+				}
+				freed_mem[freed_mem_curr_len++] = index;
+				if (freed_mem_curr_len == freed_mem_max_len) {
+					uint32_t *temp_seq = malloc(freed_mem_max_len * sizeof(uint32_t));
+					for (uint32_t i = 0; i < freed_mem_max_len; i++)
+						temp_seq[i] = freed_mem[i];
+					free(freed_mem);
+					freed_mem = NULL;
+					freed_mem = malloc(freed_mem_max_len*2);
+					for (uint32_t i = 0; i < freed_mem_max_len; i++)
+						freed_mem[i] = temp_seq[i];
+					freed_mem_max_len *= 2;
+					free(temp_seq);
+					temp_seq = NULL;
+				}
+				uint32_t *temp = mem[index];
+				free(temp);
+				mem[index] = NULL;
+			}
+			if (op==0) {
+				if(registers[c] != 0)
+					registers[a] = registers[b];
+			}
+			if (op==3) {
+				registers[a] = registers[b] + registers[c];
+			}
+			if (op==4) {
+				registers[a] = (registers[b]) * (registers[c]);
+			}
+			if (op==5) {
+				registers[a] = (registers[b]) / (registers[c]);
+			}
+			if (op==6) {
+				registers[a] = ~(registers[b] & registers[c]);
+			}
+			if (op==10) {
+				char chr = registers[c];
+				putchar(chr);
+			}
+			if (op==11) {
+				char chr;
+				scanf("%c", &chr);
+				if(feof(stdin)){
+					uint32_t temp = 0;
+					temp = ~temp;
+					registers[c] = temp;
+				} else {
+					registers[c] = chr;
+				}
+			}
+		}
+	}
+	free(registers);
+	while(mem_curr_len > 0)
+		{
+			uint32_t *data = mem[mem_curr_len-1];
+			mem_curr_len--;
+			if(data)
+				free(data);
+		}
+	free(mem);
+	free(freed_mem);
+}
+
+/*
+  get_instruction
+  Purpose: Gets the instruction at the given counter from the program segment
+  Args: mem: main memory
+  prog_counter: current location of the program execution
+  Returns: The instruction
+*/
+word get_instruction(Seq_T mem, uint32_t prog_counter) {
+	word *prog = Seq_get(mem, 0);
+	return prog[prog_counter];
+}
+
+/*
+  parse_instruction
+  Purpose: Takes in the instruction and unbitpacks the information about it
+  and runs the instruction with its specified inputs
+  Args: mem: main memory
+  freed_mem: the indexes in main memory that were deallocated previously
+  registers: the registers
+  inst: the instruction to run
+  count: the program counter
+  Returns:
+*/
+/*
+  int parse_instruction(Seq_T mem, Seq_T freed_mem, uint32_t *registers,
+  word inst, uint32_t *count)
+  {
+  uint32_t op = Bitpack_getu(inst, 4, 28);
+  if (op == 7)
+        return 1;
+    if (op == 13){
+        uint32_t a  = Bitpack_getu(inst, 3, 25);
+
+        uint32_t value  = Bitpack_getu(inst, 25, 0);
+        load_value(registers, a, value);
+        return 0;
+    }
+
+    uint32_t a  = Bitpack_getu(inst, 3, 6);
+    uint32_t b  = Bitpack_getu(inst, 3, 3);
+    uint32_t c  = Bitpack_getu(inst, 3, 0);
+
+    if (op == 12) {
+        load_program(mem, registers, count, a, b, c);
+        return 0;
+    }
+
+    run_instruction(mem, freed_mem, registers, op, a, b, c);
+    return 0;
+}
+*/
+int parse_instruction(Seq_T mem, Seq_T freed_mem, uint32_t *registers,
+                        word inst, uint32_t *count)
+{
+    //printf("inst: %"PRIx32"\n",inst);
+    uint32_t op = inst >> 28;
+    if (op == 7)
+        return 1;
+    if (op == 13){
+        uint32_t a  = inst << 4;
+        a = a >> 29;
+        uint32_t value  = inst << 7;
+        value = value >> 7;
+        load_value(registers, a, value);
+        return 0;
+    }
+
+    uint32_t a  = inst << 23;
+    a = a >> 29;
+    uint32_t b  = inst << 26;
+    b = b >> 29;
+    uint32_t c  = inst << 29;
+    c = c >> 29;
+
+    if (op == 12) {
+        load_program(mem, registers, count, a, b, c);
+        return 0;
+    }
+
+    run_instruction(mem, freed_mem, registers, op, a, b, c);
+    return 0;
+}
+
+
+
+/*
+run_instruction
+Purpose: Calls each instruction based on what operation is being performed
+Args: mem: main memory
+    freed_mem: the indexes in main memory that were deallocated previously
+    registers: the registers
+    op: the operation number of the instruction
+    rega: the first register referenced in the instruction
+    regb: the second register referenced in the instruction
+    regc: the third register referenced in the instruction
+Returns: none
+*/
+void run_instruction(Seq_T mem, Seq_T freed_mem, uint32_t *registers, seg_id op,
+                        seg_id rega, seg_id regb, seg_id regc)
+{
+    switch(op)
+    {
+        case 1:
+            segmented_load(mem, registers, rega, regb, regc);
+            break;
+        case 2:
+            segmented_store(mem, registers, rega, regb, regc);
+            break;
+        case 8:
+            map_segment(mem, registers, freed_mem, rega, regb, regc);
+            break;
+        case 9:
+            unmap_segment(mem, registers, freed_mem, rega, regb, regc);
+            break;
+        case 0:
+            conditional_move(registers, rega, regb, regc);
+            break;
+        case 3:
+            addition(registers, rega, regb, regc);
+            break;
+        case 4:
+            multiplication(registers, rega, regb, regc);
+            break;
+        case 5:
+            division(registers, rega, regb, regc);
+            break;
+        case 6:
+            nand(registers, rega, regb, regc);
+            break;
+        case 10:
+            output(registers, rega, regb, regc);
+            break;
+        case 11:
+            input(registers, rega, regb, regc);
+            break;
+    }
+}
+
+/*
+setup_memory
+Purpose: to setup the main memory of the system
+Args: prog: the program to be placed in the 0th segment
+Returns: a sequence representing the main memory of the universal machine
+*/
+Seq_T setup_memory(word *prog)
+{
+    Seq_T seq = Seq_new(150000000);
+    Seq_addhi(seq, prog);
+    return seq;
+}
+
+/*
+setup_recycle
+Purpose: to setup the freed_mem
+Args: none
+Returns: a sequence representing the indexes of deallocate memory that can be
+          reused
+*/
+Seq_T setup_recycle()
+{
+    Seq_T seq = Seq_new(150000000);
+    return seq;
+}
+
+/*
+setup_registers
+Purpose: Creates the array of 8 registers
+Args: none
+Returns: the array of registers
+*/
+uint32_t *setup_registers()
+{
+    uint32_t *registers = malloc(8 * sizeof(uint32_t));
+    for (int i = 0; i < 8; i++) {
+        registers[i] = 0;
+    }
+    return registers;
+}
+
+
+/*
+translate_address
+Purpose: ids:
+Args:
+Returns: a word represnting one instruction
+*/
+seg_id translate_address(Seq_T ids, uint32_t id)
+{
+    Seq_addlo(ids, (void *)(uintptr_t)id);
+    return (seg_id)(uintptr_t)Seq_remlo(ids);
+}
+
+/*
+conditional_move
+Purpose: To move a value in register b into register a if register c is 0
+Args: regs: the registers
+      rega: the first register referenced in the instruction the destination
+      regb: the second register referenced in the instruction the source
+      regc: the third register referenced in the instruction the conditional
+Returns: none
+*/
+void conditional_move(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc){
+    if(regs[regc] != 0){
+        regs[rega] = regs[regb];
+    }
+}
+
+
+/*
+segmented_load
+Purpose: Loads a segment from memory at the location specified by register b
+    The number in register c is which word from that segment is copied
+    into register a
+Args:
+    mem: the main memory
+    regs: the registers
+    rega: the first register referenced in the instruction the destination
+    regb: the second register referenced in the instruction the index
+    regc: the third register referenced in the instruction the offset
+Returns: none
+*/
+void segmented_load(Seq_T mem, uint32_t * regs, seg_id rega, seg_id regb,
+                    seg_id regc)
+{
+    word *arr = Seq_get(mem, regs[regb]);
+    word *info = &(arr[regs[regc]]);
+    regs[rega] = *info;
+}
+
+/*
+segmented_store
+Purpose: to store a segment inside a register into main memory
+Args:mem: the main memory
+    regs: the registers
+    rega: the first register referenced in the instruction the index
+    regb: the second register referenced in the instruction the offset
+    regc: the third register referenced in the instruction the value
+Returns: none
+*/
+void segmented_store(Seq_T mem, uint32_t * regs, seg_id rega, seg_id regb,
+                     seg_id regc)
+{
+    word *arr = Seq_get(mem, regs[rega]);
+    arr[regs[regb]] = regs[regc];
+}
+
+/*
+addition
+Purpose: to the numbers in registers b and c and place them in a
+Args:regs: the registers
+    rega: the first register referenced in the instruction the destination
+    regb: the second register referenced in the instruction a value
+    regc: the third register referenced in the instruction a value
+Returns: none
+*/
+void addition(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc)
+{
+    regs[rega] = regs[regb] + regs[regc];
+}
+
+/*
+multiplication
+Purpose: Multiplies the values in registers b and c and stores the result in
+    register a
+Args:regs: the registers
+    rega: the first register referenced in the instruction the destination
+    regb: the second register referenced in the instruction a value
+    regc: the third register referenced in the instruction a value
+Returns: none
+*/
+void multiplication(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc)
+{
+    regs[rega] = (regs[regb]) * (regs[regc]);
+}
+
+/*
+division
+Purpose: to divide the value in register b by that in c and plave it in a
+Args:regs: the registers
+    rega: the first register referenced in the instruction the destination
+    regb: the second register referenced in the instruction a value
+    regc: the third register referenced in the instruction a value
+Returns:
+*/
+void division(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc)
+{
+    regs[rega] = (regs[regb]) / (regs[regc]);
+}
+
+/*
+nand
+Purpose: NANDs (bitwise and (&), then not the result) the values the registers
+    b and c and stores the result in a.
+Args:regs: the registers
+    rega: the first register referenced in the instruction the destination
+    regb: the second register referenced in the instruction a value
+    regc: the third register referenced in the instruction a value
+Returns:
+*/
+void nand(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc)
+{
+    regs[rega] = ~(regs[regb] & regs[regc]);
+}
+
+
+/*
+map_segment
+Purpose: allocates a new segment of memory in main memory and returns the index
+        in main memory was the segement was allocated
+Args:mem: the main memory
+    regs: the registers
+    freed_mem: the indexes in main memory that were deallocated previously
+    rega: the first register referenced in the instruction  nothing
+    regb: the second register referenced in the instruction the index
+    regc: the third register referenced in the instruction the size of
+          memory allocated
+Returns: none
+*/
+void map_segment(Seq_T mem, uint32_t * regs, Seq_T freed_mem, seg_id rega,
+                  seg_id regb,seg_id regc)
+{
+    (void) rega;
+
+    word *seg = malloc(regs[regc] * sizeof(word));
+    for(seg_id i = 0; i < regs[regc]; i++){
+        seg[i] = 0;
+    }
+    //regs[regb] = map_segment_helper(mem, freed_mem, seg);
+
+    if(Seq_length(freed_mem) > 100) {
+        seg_id *index = Seq_remlo(freed_mem);
+        seg_id ind = *index;
+        free(index);
+        Seq_put(mem, ind, seg);
+        regs[regb] = ind;
+    }
+    else{
+        Seq_addhi(mem, seg);
+        regs[regb] = Seq_length(mem)-1;
+    }
+    //printf("(map)Seg addr: %p\n",(void *)seg);
+
+}
+
+/*
+map_segment_helper
+Purpose: Puts the given segment into the next available bit of memory in
+    main memory
+Args: mem: main memory
+    freed_mem: the indexes in main memory that were deallocated previously
+    seg: The segment to actually store in memory
+Returns: The index (in memory) of the newly allocated segment
+*/
+seg_id map_segment_helper(Seq_T mem, Seq_T freed_mem, word *seg)
+{
+    if(Seq_length(freed_mem) > 0) {
+        seg_id *index = Seq_remlo(freed_mem);
+        seg_id ind = *index;
+        free(index);
+        Seq_put(mem, ind, seg);
+        return ind;
+    }
+    //printf("(map)Seg addr: %p\n",(void *)seg);
+    Seq_addhi(mem, seg);
+    return Seq_length(mem)-1;
+}
+
+/*
+unmap_segment
+Purpose: to deallocate an index in main memory retreives the array
+         in the sequence
+Args: mem: the main memory
+    regs: the registers
+    freed_mem: the indexes in main memory that were deallocated previously
+    rega: the first register referenced in the instruction  nothing
+    regb: the second register referenced in the instruction nothing
+    regc: the third register referenced in the instruction index to deallocate
+Returns: none
+*/
+void unmap_segment(Seq_T mem, uint32_t * regs, Seq_T freed_mem, seg_id rega,
+                    seg_id regb, seg_id regc)
+{
+    (void)rega;
+    (void)regb;
+
+    //unmap_segment_helper(mem, freed_mem, regs[regc]);
+    seg_id index = regs[regc];
+    if(Seq_get(mem,index) == NULL){
+        fprintf(stderr, "Double free at %d\n", index);
+        uint32_t arr[1] = {HALT};
+        Seq_put(mem, 0, arr);
+        return;
+    }
+    seg_id *ind_ptr = malloc(sizeof(seg_id));
+    *ind_ptr = index;
+    Seq_addhi(freed_mem, ind_ptr);
+    uint32_t *temp = Seq_get(mem,index);
+    //printf("(unmap)Seg addr: %p\n",(void *)temp);
+    free(temp);
+    Seq_put(mem, index, NULL);
+}
+/*
+unmap_segment_helper
+Purpose: Frees the given segment
+Args: mem: the main memory
+     freed_mem: the indexes in main memory that were deallocated previously
+     index: the index of the segment that is about to be freed
+Returns: none
+*/
+void unmap_segment_helper(Seq_T mem, Seq_T freed_mem,
+                          seg_id index)
+{
+    if(Seq_get(mem,index) == NULL){
+        fprintf(stderr, "Double free at %d\n", index);
+        uint32_t arr[1] = {HALT};
+        Seq_put(mem, 0, arr);
+        return;
+    }
+    seg_id *ind_ptr = malloc(sizeof(seg_id));
+    *ind_ptr = index;
+    Seq_addhi(freed_mem, ind_ptr);
+    uint32_t *temp = Seq_get(mem,index);
+    //printf("(unmap)Seg addr: %p\n",(void *)temp);
+    free(temp);
+    Seq_put(mem, index, NULL);
+}
+
+/*
+output
+Purpose: Outputs the character in register c to stdout
+Args: regs: the registers
+      rega: the first register referenced in the instruction the destination
+      regb: the second register referenced in the instruction a value
+      regc: the third register referenced in the instruction a value
+Returns: none
+*/
+void output(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc)
+{
+    (void)rega;
+    (void)regb;
+
+    char c = regs[regc];
+    putchar(c);
+}
+
+/*
+input
+Purpose: to input character values from stdin into a register
+Args:regs: the registers
+    rega: the first register referenced in the instruction none
+    regb: the second register referenced in the instruction none
+    regc: the third register referenced in the instruction the register for
+          the date to be input into
+
+Returns:none
+*/
+void input(uint32_t * regs, seg_id rega, seg_id regb, seg_id regc)
+{
+    (void)rega;
+    (void)regb;
+
+    char c;
+    scanf("%c", &c);
+    if(feof(stdin)){
+        uint32_t temp = 0;
+        temp = ~temp;
+        regs[regc] = temp;
+    } else {
+        regs[regc] = c;
+    }
+}
+/*
+load_program
+Purpose: Loads the segment located at the address which is stored in register
+    b into the program and the program counter (where the program is running
+    currently) is set to the value in register c
+Args: mem: the main memory
+    regs: the registers
+    p_counter: a pointer to the program counter -- to be edited
+    rega: the first register referenced in the instruction  nothing
+    regb: the second register referenced in the instruction nothing
+    regc: the third register referenced in the instruction index to deallocate
+Returns: none
+*/
+void load_program(Seq_T mem, uint32_t * regs, uint32_t * p_counter,
+                  seg_id rega, seg_id regb, seg_id regc){
+    (void)rega;
+
+    if (regs[regb] != 0)
+        Seq_put(mem, 0, Seq_get(mem, regs[regb]));
+    *p_counter = regs[regc];
+}
+
+/*
+load_value
+Purpose: to load a value into register "a"
+Args: regs: the registers
+      rega: the register to be populated
+      value: the value plave in rega
+Returns: none
+*/
+void load_value(uint32_t * regs, seg_id rega, uint32_t value)
+{
+    regs[rega] = value;
+}

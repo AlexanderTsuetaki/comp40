@@ -1,0 +1,82 @@
+**************************************
+*     Comp 40 - HW2 - iii             *
+*Authors: Andrew Crofts - acroft01    *
+*         Alexander Tsuetaki-atsuet01 *
+*Date Modified:9/16/19                *
+*Time Used: 27hrs                     *
+**************************************
+Acknowledgements: Gabriel McNinch, Alex Zsikla
+
+Purpose: To get practice desigining interfaces;
+To become better at programing techniques; 
+To learn about locality and making efficient programs(code tuning etc)
+
+
+
+
+Files: - All implemented correctally
+- uarray2.h: the header file for UArray2_T
+- uarray2.c: the body of UArray2_T 
+the UArray2_T represents a 2d array of any value
+the size is determined when UArray2_t is initialized
+used in sudoku to represent the 2d array of ints;
+has mapping capibilities for row and coloumns
+- bit2.h   : the header file for Bit2_T
+- bit2.c   : the body of Bit2_T. Bit2_T represents a 2d array of bits.
+the size of the array is defined when Bit2_T is initialized
+has mapping capibilities for row and coloums
+- Sudoku.c :the implementation of the sudoku checker, taking in a 9 x 9
+square of integers to be interpreted as a game board in
+the form of a pgm
+- unblackedges.c: the implementation of a program that removes all the
+black edges from a pbm file. Uses a BFS method to 
+find all black edge pixels.
+
+
+
+
+Data Structures: 
+Bit2_T{ int width, int height, Bit_T array }
+width: the width of the array
+height: the height of the array
+array: a hanson bit vector to hold all bit values
+
+UArray2_T{int width, int height, unsigned int size, UArray_T uarray}
+width: the width of the array
+height: the height of the array
+size: the size of each value
+uarray: the 1D array holding all the values- simulating a 2D array
+
+loc{int width, int height}
+width: the width component of a pixel to be changed to white
+height: the height component of a pixel to be changed to white
+
+
+One Hanson List_T:  (stack):
+Used to hold the locations of pixels to be changed to white in 
+unblackedges.c
+
+Functions used:
+List_list- initializes list;
+List_free- frees list;
+List_push- pushes a new location to the top of the stack
+List_pop- pops the top location from the stack
+
+One Hanson UArray_T:(array):
+Used in the implementation of UArray2_T a "2d" version of 
+UArray_T. 
+
+Functions used:
+UArray_new- creates a new UArray 
+UArray_at- gets the pointer to a value in the array
+UArray_free- frees the array
+
+One Hanson Bit_T:   (bit vector):
+Used in the implementation of Bit2_T a "2d" version of Bit_T
+
+Functions used:
+Bit2_T new - initializes new bit object 
+Bit2_T get - gets next bit at given index 
+Bit2_T put - puts bit at given index
+Bit2_T free - frees space allocated for bit
+

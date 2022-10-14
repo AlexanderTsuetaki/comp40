@@ -1,0 +1,376 @@
+
+.temps r6,r7
+.zero r0
+
+.section init
+    r2 := call_stack	  // r2 holds the callstack
+    r3 := jumptable + 256 // end of jumptable
+    r5 := jumptable       // r5 used in loop
+
+	l1: // loop to initialize jumptable sets all values to print err message
+		m[r0][r5] := printerr
+		r5 := r5 + 1 // r5 holds current location in jumptable 
+		if(r5 <s r3) goto l1 using r4
+
+    // Notes: below initializing all values of jumptable
+	m[r0][jumptable + ' '] := waiting
+	m[r0][jumptable + '\n'] := print
+	m[r0][jumptable + '+'] := add
+	m[r0][jumptable + '-'] := sub
+	m[r0][jumptable + '*'] := mult	
+	m[r0][jumptable + '/'] := div
+	m[r0][jumptable + '|'] := bor
+	m[r0][jumptable + '&'] := band
+	m[r0][jumptable + 'c'] := csign
+	m[r0][jumptable + '~'] := bcomp	
+	m[r0][jumptable + 's'] := swap
+	m[r0][jumptable + 'd'] := dupl
+	m[r0][jumptable + 'p'] := discard
+	m[r0][jumptable + 'z'] := clear
+
+	r5 := jumptable + '0'  // r5 holds current ascii digit of jumptable
+	r3 := jumptable + 58   // r3 holds value after ascii 9 - end of loop
+
+	l2:    // loop to initialize ascii 0 to 9 of jumptable
+		m[r0][r5] := dec
+		r5 := r5 + 1
+		if (r5 <=s r3) goto l2 using r4
+
+.section text
+  // main
+  // purpose: sets r3 to the value stack, calls waiting to get first input
+  //   and also will return to call main when done
+  // parameters: none, but jumptable must be set up
+  // returns: none
+	main:
+		r3 := value_stack      // r3 holds the value stack
+		push r1 on stack r2    // push return address on the stack
+		goto waiting linking r1	
+		pop r1 off stack r2// restores r1 to the return address of main
+		goto r1
+
+  // waiting
+  // purpose: sets r4 to input and terminates the program if r4 is eof. calls
+  //          waiting with character after input is gotten
+  // parameters: none
+  // returns: none
+	waiting:
+		r4 := input()   // r4 gets the command inputed to the calculator
+		if(r3 == -1) goto end using r5 
+	
+  // waiting_with_character
+  // purpose: calls correct spot of jumptable to deal with previously input 
+  //          character
+  // parameters: r4, the previously input character
+  // returns: none
+	waiting_with_character:
+		r5 := jumptable + r4 // r5 gets the location of the function 
+			 	     // assocated with the command in r4
+		goto m[r0][r5]
+
+  // dec
+  // purpose: handles reading in numbers. will continuously read in numbers
+  //   until a non-number character is reached
+  // parameters: r4, a previously input number-character
+  // returns: none
+	dec:
+		r4 := r4 - 48 // r5 holds number-literal version of ascii char
+		push r4 on stack r3 // saves first value in the inputed number
+		l3:  // loop to continuously read in more numbers
+			r4 := input()         // r4 continuously holds input
+			if(r4 == -1) goto end using r5
+			push r3 on stack r2   // to use r3 as temporary register
+			r4 := jumptable + r4  // to check if r4 is a num char
+			if (m[r0][r4] != dec) goto non_num_char using r5,r3
+			r4 := r4 - jumptable
+			pop r3 off stack r2   // retreives value stack
+			pop r5 off stack r3   // retreives the previously inputed digits
+								  // of the number inputed
+			r5 := r5 * 10 // r5 holds number-literal of previously input nums
+			r5 := r5 + r4 
+			r5 := r5 - 48 // r5 holds the updated number-literal
+			push r5 on stack r3
+			goto l3
+
+      // non_num_char
+      // purpose: if dec reads in non_num_char, handles getting values off
+      //     call stack and resetting r4
+      // parameters: r4, which will be jumptable + ascii character
+      // returns: r4 re-converted into an ascii character, r3 as holding value
+      //     stack
+		non_num_char:
+			r4 := r4 - jumptable 
+			pop r3 off stack r2
+			goto waiting_with_character
+
+  // end
+  // purpose: terminate the program if we reach eof
+  // parameters: none
+  // returns: none
+	end:
+		r3 := value_stack // set r3 to top of stack
+		goto r1
+
+  // printerr
+  // purpose: prints an error message if we read in an unknown character
+  // parameters: r4, the unknown character to be printed in the error message
+  // returns: none
+	printerr:
+		output "Unknown character \'"
+		output r4  // holds unknown char
+		output "\'\n"
+
+		goto waiting
+
+  // underflow_error_1
+  // purpose: prints an error message if we expected 1 element in the stack but
+  //     have 0 in the stack
+  // parameters: none
+  // returns: none
+	underflow_error_1:
+		output "Stack underflow---expected at least 1 element\n"
+		goto waiting
+
+  // underflow_error_2
+  // purpose: prints an error message if we expected 2 elements in the stack
+  //	 but have < 2 in the stack
+  // parameters: none
+  // returns: none
+	underflow_error_2:
+		output "Stack underflow---expected at least 2 elements\n"
+		goto waiting
+
+  // add
+  // purpose: adds two values on top of value stack and puts result back on
+  //   value stack
+  // parameters: r3 is expected to be value_stack
+  // returns: none
+	add:
+		if(r3 == value_stack) goto underflow_error_2 using r5
+		if(r3 == value_stack-1) goto underflow_error_2 using r5
+		pop r4 off stack r3  // r4 is one value to add
+		pop r5 off stack r3  // r5 is second value to add & result
+		r5 := r5 + r4
+		push r5 on stack r3
+		goto waiting
+
+  // sub
+  // purpose: subtracts first value on top of value stack from second and puts
+  //     result back on value stack
+  // parameters: r3 is expected to be value_stack
+  // returns: none
+	sub:
+		if(r3 == value_stack) goto underflow_error_2 using r5
+		if(r3 == value_stack-1) goto underflow_error_2 using r5
+		pop r4 off stack r3  // r4 is value to be subtracted
+		pop r5 off stack r3  // r5 is value subtracted from & result
+
+		r5 := r5 - r4
+		push r5 on stack r3
+		goto waiting
+	
+  // mult
+  // purpose: multiplies two values on top of value stack and puts result
+  //     back on value stack
+  // parameters: r3 is expected	to be value_stack
+  // returns: none
+	mult:
+		if(r3 == value_stack) goto underflow_error_2 using r5
+		if(r3 == value_stack-1) goto underflow_error_2 using r5
+		pop r4 off stack r3  // r4 is first value to be multiplied
+		pop r5 off stack r3  // r5 is second value to be multiplied & result
+
+		r5 := r5* r4
+		push r5 on stack r3
+		goto waiting
+		
+  // div
+  // purpose: divides first value on value stack by second and puts result
+  //     back on value stack
+  // parameters: r3 is expected to be value stack
+  // returns: none
+
+	div:
+		if(r3 == value_stack) goto underflow_error_2 using r5
+		if(r3 == value_stack-1) goto underflow_error_2 using r5
+
+		push r1 on stack r2  // r1 used as temp register
+		pop r5 off stack r3  // value to be denominator and result
+		pop r4 off stack r3  // value to be numerator
+
+		if(r5 == 0) goto db0
+
+		push r3 on stack r2
+		r1 := r4 & 0x80000000 # stored in 1 depared calling con
+		if(r1 != 0)goto firstneg
+		r1 := r5 & 0x80000000 
+		if(r1 != 0)goto secneg
+		goto divide
+
+      // firstneg
+      // purpose: case if numerator is negative. negates numberator and will 
+      //     check cases for denominator's negativity
+      // parameters: r4, negative number, and r5, to be analyzed
+      // returns: negated r4 and goes to next function call
+		firstneg:
+			r4 := -r4
+			r1 := r5 & 0x80000000
+			if(r1 != 0)goto bothneg
+			goto ndivide
+
+      // bothneg
+      // purpose: case if both numerator and denominator are negative. 
+      // parameters: r4, made positive, and r5, a negative number
+      // returns: negated r5 and passes control to next function call
+		bothneg:
+			r5 := -r5
+			goto divide
+
+      // secneg
+      // purpose: case if only denominator is negative. negates it then passes
+      //     control to ndivide
+      // parameters: r4, naturally positive, and r5, a negative number
+      // returns: negated r5 and passes control to next function call
+		secneg:
+			r5 := -r5
+ 
+     // ndivide
+     // purpose: divides a positive r4 by positive r4 and negates the product
+     //     then exits division call
+     // parameters: r4 and r5, positive numbers
+     // returns: none
+		ndivide:
+			r5 := r4 / r5
+			r5 := -r5
+			pop r3 off stack r2
+			push r5 on stack r3
+			pop r1 off stack r2
+			goto waiting
+
+     // ndivide
+     // purpose: divides a positive r4 by positive r4 and then exits division
+     //	    call
+     // parameters: r4 and r5, positive numbers
+     // returns: none
+		divide:
+			r5 := r4 / r5
+			pop r3 off stack r2
+			push r5 on stack r3
+			pop r1 off stack r2
+			goto waiting
+
+     // db0
+     // purpose: prints error for division by 0 and resets the stack
+     // parameters: r4 and r5, values gotten off the stack previously
+     // returns: none, transfers control to exit division call		
+		db0:
+			push r4 on stack r3
+			push r5 on stack r3
+			output "Division by zero\n"
+			goto waiting
+
+  // bor
+  // purpose: executes a bitwise or with top 2 values of value stack and puts
+  //     result back on value stack
+  // parameters: expects r3 to be value stack
+  // returns: none
+	bor:
+		if(r3 == value_stack) goto underflow_error_2 using r5
+		if(r3 == value_stack-1) goto underflow_error_2 using r5
+		pop r4 off stack r3   // first value to be or'ed
+		pop r5 off stack r3   // second value to be or'ed and holds result
+
+		r5 := r5 | r4
+		push r5 on stack r3
+		goto waiting
+
+  // bor
+  // purpose: executes a bitwise and with top 2 values of value stack and
+  //     puts result back on value stack
+  // parameters: expects r3 to be value stack
+  // returns: none
+	band:
+		if(r3 == value_stack) goto underflow_error_2 using r5
+		if(r3 == value_stack-1) goto underflow_error_2 using r5
+		pop r4 off stack r3   // first value to be and'ed
+		pop r5 off stack r3   // second value to be and'ed and holds result
+
+		r5 := r5 & r4
+		push r5 on stack r3
+
+		goto waiting
+
+  // csign
+  // purpose: changes the sign of top value on value stack
+  // parameters: expects r3 to be value stack
+  // returns: none
+	csign:
+		if(r3 == value_stack) goto underflow_error_1 using r5
+		pop r5 off stack r3  // number to negate
+
+		r5 := ~r5
+		r5 := r5 + 1
+		push r5 on stack r3
+		goto waiting
+
+  // bcomp
+  // purpose: gets bitwise complement of top value on value stack and 
+  //     replaces top of value stack with the complement
+  // parameters: expects r3 to be value stack
+  // returns: none
+	bcomp:
+		if(r3 == value_stack) goto underflow_error_1 using r5
+		pop r5 off stack r3  // number to get the bitwise complement of
+		r5 := ~r5
+
+		push r5 on stack r3
+
+		goto waiting
+
+  // swap
+  // purpose: swaps top to values on the value stack
+  // parameters: expects r3 to be value stack
+  // returns: none
+	swap:
+		if(r3 == value_stack) goto underflow_error_2 using r5
+		if(r3 == value_stack-1) goto underflow_error_2 using r5
+		pop r4 off stack r3  // top value on value stack
+		pop r5 off stack r3  // second value on value stack
+		
+
+		push r4 on stack r3
+		push r5 on stack r3
+		goto waiting
+
+  // dupl
+  // purpose: duplicates the top value on value stack, putting a copy on top
+  // parameters: expects r3 to be value stack
+  // returns: none
+	dupl:
+		if(r3 == value_stack) goto underflow_error_1 using r5
+		pop r5 off stack r3  // number to be duplicated
+
+		push r5 on stack r3
+		push r5 on stack r3
+		goto waiting
+
+  // discard
+  // purpose: discards the top value on value stack
+  // parameters: expects r3 to be value stack
+  // returns: none
+	discard:
+		if(r3 == value_stack) goto underflow_error_1 using r5
+		pop r5 off stack r3 // r5 containes the value being discarded
+		goto waiting
+
+  // clear
+  // purpose: clears value stack by setting r3 equal to end of the stack 
+  //     (the bottom of the stack)
+  // parameters: expects r3 to be value stack
+  // returns: r3 as bottom of value stack
+	clear:
+		r3 := value_stack  // r3 is value stack
+		goto waiting
+	
+
+	

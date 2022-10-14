@@ -1,0 +1,11 @@
+#com.tasm
+#bitwise comparison
+#
+#
+#
+
+macro com
+temp r7
+loadval rt,~0 
+nand p1,p2,rt
+mend

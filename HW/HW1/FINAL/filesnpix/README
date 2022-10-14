@@ -1,0 +1,108 @@
+**************************************
+*     Comp 40 - HW1 - Simlines        *
+*Authors: Tianyi Ma - TMa02           * 
+*         Alexander Tsuetaki-atsuet01 *
+*Date Modified:9/16/19                *
+*Time Used: 30hrs                     *
+**************************************
+Acknowledgements: Byron
+
+
+Purpose: To learn the basics of working in comp40 (pair-work, C, interfaces,
+     test cases, program design)
+     To create programs to find the brightness of a picture, read in a line
+     from a file and find all similar lines in one or more files.
+
+Files: - All implemented correctly 
+brightness.c    : a file that returns the average brightness of a picture
+                  when compiled and run. Pass one file in on the command line
+                  or the output of a file piped into the program.
+readaline.c     : a file that holds a function that returns the next line 
+        from a given file.
+simlines.c      : a file that when compiled fides the number of similar lines
+          in text files that are run on the command line with it.
+          It then prints only the the line that have more than one
+          instance (see comp40 Assignment: "Files, Pictures and 
+                interfaces" for more details). Similar lines are those that
+          are parsed such that words are the the alphanumeric 
+          characters and '_' separated by character other than those.
+parse_str.c     : a file that hold the Parse_str function. The function takes 
+        a pointer to a string and parses the string of all characters 
+        that are not alphanumeric or the '_' character. The function 
+        then resizes the array and adds a \0 to the end of the char 
+        array.If the number of characters remaining is greater than 1
+        (not just the \0 or \n character), the function returns true
+        else the function returns false.
+
+
+Data Structures:
+     One hash table of Linked lists:
+     Each linked list is made of a structure representing a the file name and 
+     line number that an instance of a line occurs at.
+
+
+     Hanson datatypes:
+             Table(hashtable)
+        functions used:
+            Table_new - initialize table
+            Table_free - frees memory in table 
+            Table_get - gets an element from table
+            Table_put - puts an element into the table
+            Table_to_array - converts the table to an array
+            Table_length - gets the length of the table
+        List(Linked List)
+            functions used:
+              List_list - initialize list
+              List_push - pushes a new instance into list
+              List_reverse - reverses the list
+              List_length - finds the length of the list
+              List_pop - gets the top element of the list
+              List_free - frees memory of the list
+ 
+     location struct{ char* filename, int line number);
+     
+     The hash table represents all the match groups. 
+     The keys to the linked lists in the hash table are the parsed lines
+     The Linked Lists represent a single match group that contains all the
+          locations where the line (the key) appears.
+
+
+Bugs:
+    We have not found any more bugs and all previous bugs have been solved
+    
+    We struggled the most implementing the dynamically expanding version  
+    of readaline.c function. We originally created a buffer to dynamically
+    take in a line then copy it to a pointer to a string which returns to 
+    simlines. 
+
+    We also had issues freeing the memory of atoms, we identifies that the 
+    memory leaks depended on the number of match groups(atoms) we had, but 
+    could not find a way to free the atoms as they were const * chars. we 
+    eventually found that we were not responsible for removing the memory
+    of atoms.
+
+    We has issues reading in the output of files passed into brightness. We
+    had originally just had a function that took names of files from the 
+    command line arguments. We solved this by adding another function that 
+    checks the number of command line arguments and if there is only 1
+    (the function), reads in from standard input
+
+    parseline -
+    Tested with all the possible edge cases for strings that we can think
+    of, which led to bugs such as
+        - segfault when the line is only one character
+        - segfault when the last line is not newline
+        - cannot correctly parse to the format given by spec when the
+          ending char of a line is not a english character nor digit
+    All the known bugs were fixed.
+
+    populate_table -
+    When the file passed in did not open correctly, the program exit with a
+    CRE but the memory allocated to the table is not freed. Added a vfree
+    fuction to free all values that the table holds by mapping the function
+    onto each key-value pairs.
+
+    Performance:
+        Tested with 90000 match groups with >1,000,000 lines of text on 
+        average ~30 chars in length. The process completed in .15 seconds
+

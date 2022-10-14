@@ -1,0 +1,81 @@
+               COMP 40 Lab: Naming brightness functions
+                             (for pairs)
+
+
+Partner's:
+
+Partner 1:  Name_Tianyi_Ma____    Login __tma02____
+
+Partner 2:  Name_Alex_Tsuetaki_   Login __atsuet01_
+
+Partner 3:  Name______________    Login ____________ (if any)
+
+
+This file goes with part 8 of the first lab.  The idea is to give you
+some practice thinking about the names of functions.  The problem is a
+simple one, so we're going the software equivalent of shooting a fly
+with an elephant gun, but because the problem is so simple, it makes
+it easy to have a short practice session.
+
+Here is the problem:
+
+  - Suggest three different functions that might be useful in
+    implementing `brightness`.
+
+  - For each function, suggest three possible names.
+
+  - For each function, say which name you think is most appropriate
+    and *why*.
+
+
+
+Function #1: File *get_input()
+
+  Job: Determines whether the image is passed in though stdin or the 
+       filename of the image is included in the argument and store it
+       as a FILE.
+
+  Candidate names: getInput, get_img
+
+  Best name: get_input
+
+  Why the given name is the best: because it is a straightforward
+  description of what the function does. In addition, this does not
+  check whether the inputted file is a image or not, thus read_img
+  is not an ideal name.
+
+
+
+
+
+Function #2: float read_img(File *img)
+
+  Job: Checks the file format and, if it is a pnm image, reads in the
+  brightness value of each pixel and returns the calculated average.
+
+  Candidate names: calculate_bright, get_brightness
+
+  Best name: read_img
+
+  Why the given name is the best: This name is concise and is an
+  accurate depiction of what this fuction does. The other two names are
+  specific but too wordy.
+
+
+
+
+
+Function #3: void print_brightness(float avg)
+
+  Job: Prints out the brightness value with the correct format given.
+
+  Candidate names: show_brightness, display_brightness
+
+  Best name: print_brightness
+
+  Why the given name is the best: It's descriptive and short. The other
+  two names would also work but they are a bit longer, which is not
+  necessary.
+
+
+

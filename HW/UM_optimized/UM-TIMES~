@@ -1,0 +1,55 @@
+| Benchmark|time-ssh|Instructions  |Rel to start |Rel  to prev | Improvement |
+--------------------------------------------------------------------------------
+Midmark:   |0:06.38 |~35.51*10^9   |1.000        |1.000        | start
+
+Sandmark:  |2:34.17 |N/A           |1.000        |1.000        | start
+
+Advent:    |0:56.91 |N/A           |1.000        |1.000        | start
+--------------------------------------------------------------------------------
+Midmark:   |0:03.40 |~24.58*10^9   |0.533        |0.533        | added O1
+
+Sandmark:  |1:25.23 |N/A           |0.552        |0.552        | added O1
+
+Advent:    |0:30.86 |N/A           |0.542        |0.542        | added O1
+--------------------------------------------------------------------------------
+Midmark:   |0:03.20 |~25.06*10^9   |0.502        |0.941        | added O2
+
+Sandmark:  |1:20.12 |N/A           |0.520        |0.940        | added O2
+
+Advent:    |0:28.32 |N/A           |0.498        |0.918        | added O2
+--------------------------------------------------------------------------------
+Midmark:   |0:01.90 |~10.51*10^9   |0.298        |0.594        |removed bitpack
+                                                                library
+Sandmark:  |0:48.15 |N/A           |0.312        |0.601        |removed bitpack
+                                                                library
+Advent:    |0:16.27 |N/A           |0.286        |0.575        |removed bitpack
+                                                                library
+--------------------------------------------------------------------------------
+Midmark:   |0:01.83 |~10.15*10^9   |0.287        |0.963        |combined files
+
+Sandmark:  |0:46.04 |N/A           |0.299        |0.956        |combined files
+
+Advent:    |0:15.41 |N/A           |0.270        |0.947        |combined files
+--------------------------------------------------------------------------------
+Midmark:   |0:00.24 |~2.98*10^9    |0.038        |0.131        |Switched to 
+	   	    		   		 	        halligan servers
+								and rid our 
+								program of all
+								Seq_T's and
+								replaced them
+								with c arrays
+Sandmark:  |0:05.30 |N/A           |0.034        |0.115        |Switched to 
+	   	    		   		 	        halligan servers
+								and rid our 
+								program of all
+								Seq_T's and
+								replaced them
+								with c arrays
+Advent:    |0:02.10 |N/A           |0.037        |0.136        |Switched to 
+	   	    		   		 	        halligan servers
+								and rid our 
+								program of all
+								Seq_T's and
+								replaced them
+								with c arrays
+--------------------------------------------------------------------------------

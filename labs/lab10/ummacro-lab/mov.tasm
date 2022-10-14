@@ -1,0 +1,10 @@
+#mov.tasm
+#moves a value into another register
+#
+#
+
+macro mov
+temp r7
+loadval rt,0
+cmov p1,p2,rt
+mend

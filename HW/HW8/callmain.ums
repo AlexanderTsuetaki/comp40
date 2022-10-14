@@ -1,0 +1,14 @@
+// r1 holds the return address to this function
+// r6,r7 are the temp registers
+// r0 is the zero register
+.temp r6,r7
+.zero r0
+
+//section: init
+//purpose: to go to main after the initialization of the calculator is complete
+//Arguments: none
+//Returns: none
+//notes: links r1 to main 
+.section init
+	goto main linking r1 // r1 holds the return address to this function
+	halt

@@ -1,0 +1,29 @@
+
+# C compies with gcc
+CC = gcc
+
+IFLAGS = -I. -I/comp/40/build/include -I/usr/sup/cii40/include/cii
+
+CFLAGS = -g -std=gnu99 -Wall -Wextra -Werror -Wfatal-errors -pedantic $(IFLAGS)
+
+LDFLAGS = -g -L/comp/40/build/lib -L/usr/sup/cii40/lib64
+
+LDLIBS =  -larith40 -lnetpbm -lm -lrt 
+
+INCLUDES = $(shell echo *.h)
+
+############ Rules #############
+
+all: compress40
+
+##compile step
+%.o: %.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+
+## Linking step
+compress40: 40image.o bitpack.o compress40.o
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+
+clean:
+	rm -f bitpack *.o

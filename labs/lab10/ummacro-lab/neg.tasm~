@@ -1,0 +1,11 @@
+#neg negation
+#two's compliment negation
+#
+#
+include com
+macro neg
+temp r7
+neg p1,p2
+add p1,p1,1
+mend
+

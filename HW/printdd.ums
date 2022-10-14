@@ -1,0 +1,92 @@
+//r6, r7 are the temp registers
+//r0 is the zero register
+//r1 holds the return address for the function for which the current function
+//   should return to upon completion
+
+.temps r6,r7
+.zero r0
+//section text
+//purpose to hold the functions of the calculator
+//notes:
+.section text
+
+	//print
+	//purpose: to print out all the values in the value_stack
+	//arguments: r1 the return address to be gone to
+	//returns: r1 the return address when it is gone to
+	//stack pointer for functions: r2
+	//stack pointer for values: r3
+	//nonvolitiles: r0,r2,r3
+	//zero register: r0
+    print: 
+       push r1 on stack r2
+       if(r3 == value_stack) goto waiting using r5
+	   r4 := r3   // r4 holds current space in stack - print value at space
+       loop_print:
+           r5 := m[r0][r4]    // r5 holds value to print
+		   goto print_val linking r1
+           r4 := r4 + 1
+           if(r4 != value_stack) goto loop_print using r5
+       pop r1 off stack r2
+       goto waiting
+
+	//print_val
+	//purpose: to print out one value
+	//arguments: r1 the return address to be gone to
+	//returns: r1 the return address when it is gone to
+	//stack pointer for functions: r2
+	//zero register: r0
+	print_val:
+        push r1 on stack r2
+		push r3 on stack r2   // pushing so that we can use r1, r3, r4 as
+		push r4 on stack r2   // temp registers 
+		output ">>> "
+		if(r5 == 0) goto print_0 using r4
+		if(r5 <s 0) goto neg_print using r3, r4
+		done_neg_print:
+
+		r3 := 1000000000      // r3 holds current power of 10 to print
+
+		l_print_digs:         // loop to print all digits
+			r4 := r5 / r3     // r4 is used to print current digit
+			if(r4 != 0) goto print_dig using r1
+			done_print_dig:
+			r3 := r3 / 10     // iterate through powers of 10
+			if (r3 != 0) goto l_print_digs using r4
+
+		done_print_val:
+		output "\n"
+
+		pop r4 off stack r2 // restoring r1, r3, r4 to finish function call
+		pop r3 off stack r2
+		pop r1 off stack r2
+		goto r1
+		
+
+  // print_0
+  // purpose: outputs a zero if the value is 0
+  // returns and parameters: none
+	print_0:
+		output "0"
+		goto done_print_val
+
+
+  // print_dig
+  // purpose: to print the lowest-order digit of a value
+  // returns: none
+  // parameters: uses r4, the value's digit to be printed
+	print_dig: // r4 holds a value to print plus all higher-order digits
+		r4 := r4 mod 10
+		r4 := r4 + 48
+		output r4
+		goto done_print_dig
+
+  // neg_print
+  // purpose: to print a negative sign then negate the value in r5
+  //     so that it may be printed normally as a positive number
+  // parameters: r5, the number to negate so it may be printed correctly
+  // returns: r5, negating the value in r5
+	neg_print:
+		output "-"
+		r5 := -r5
+		goto done_neg_print

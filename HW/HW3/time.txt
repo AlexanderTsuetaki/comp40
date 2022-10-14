@@ -1,0 +1,71 @@
+Timings
+
+mobo.ppm 8160*6120
+
+Row-Major-Mapping:
+Case rotate 90: took 3135945933 nanoseconds/instructions (3 seconds)
+63 nanoseconds/pixel
+
+Case rotate 180: took 2463739744 nanoseconds/instructions (2 seconds)
+49 nanoseconds/pixel
+
+Case rotate 270: took 3163375849 nanoseconds/instructions (3 seconds)
+63 nanoseconds/pixel
+
+Case transpose: took 2959709731 nanoseconds/instructions (2 seconds)
+59 nanoseconds/pixel
+
+Case flip horizontal: took 2256383694 nanoseconds/instructions (2 seconds)
+45 nanoseconds/pixel
+
+Case flip vertical: took 2260592146 nanoseconds/instructions (2 seconds)
+45 nanoseconds/pixel
+
+
+Col-Major-Mapping:
+Case rotate 90: took 3312265832 nanoseconds/instructions (3 seconds)
+66 nanoseconds/pixel
+
+Case rotate 180: took 4804851010 nanoseconds/instructions (4 seconds)
+96 nanoseconds/pixel
+
+Case rotate 270: took 3296818370 nanoseconds/instructions (3 seconds)
+66 nanoseconds/pixel
+
+Case transpose: took 3261958145 nanoseconds/instructions (3 seconds)
+65 nanoseconds/pixel
+
+Case flip horizontal: took 4296161668 nanoseconds/instructions (4 seconds)
+86 nanoseconds/pixel
+
+Case flip vertical: took 4447978749 nanoseconds/instructions (4 seconds)
+89 nanoseconds/pixel
+
+
+Block-Major-Mapping:
+Case [90]: took 5165987762 nanoseconds/instructions (5 seconds)
+103 nanoseconds/pixel
+
+Case [180]: took 5163985074 nanoseconds/instructions (5 seconds)
+103 nanoseconds/pixel
+
+Case [270]: took 5013118031 nanoseconds/instructions (5 seconds)
+100 nanoseconds/pixel
+
+Case [69]: took 4952004895 nanoseconds/instructions (4 seconds)
+99 nanoseconds/pixel
+
+Case [420]: took 4876265199 nanoseconds/instructions (4 seconds)
+98 nanoseconds/pixel
+
+Case [720]: took 4883197560 nanoseconds/instructions (4 seconds) 
+98 nanoseconds/pixel
+
+Patterns:
+Best is row major 180 degrees
+
+Row major is always better than col major
+
+Block major (at least ours) is the worst but is quite consistent.
+
+Col major 180 degrees is worst without counting block major.

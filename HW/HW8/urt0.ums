@@ -1,0 +1,39 @@
+
+//section: init
+//purpose: to initialize the temporary and zero registers before main is called
+//Arguments: none
+//Returns: none
+//Notes: register r0 is set to zero while registers r6 and r7 are the temporary
+//       registers
+.section init
+	.temps r6,r7
+	.zero r0
+	r0 := 0
+	r2 := call_stack
+
+
+
+//section: data
+//purpose: allocates space to hold the call and value stacks
+//Arguments: none
+//Returns: none
+//Notes: call_stack is where the functions are pushed to 
+//     : value_stack is where values are pushed to
+.section data
+	.space 10000
+	call_stack:// the call_stack is 100000 32 bit words large and holds the
+			   // the return addresses of functions
+		.space 10000
+	value_stack:// the value_stack is 10000 32 bit words large and hold the
+				// the values of the calculator
+
+
+//section: rodata
+//purpose: to allocates space for the jumptable
+//Arguments: none
+//Returns: none
+//Notes: the jumptable is 256 words large to accomidate all ascii values 0-255
+.section rodata
+	jumptable:// the jumptable is 256 32 bit words large and the labels for
+              // where the functions of the calculator are stored
+		.space 256

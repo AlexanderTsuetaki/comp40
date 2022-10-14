@@ -1,0 +1,28 @@
+*******************************************************************************
+*                      Comp 40 - HW7 - profiling                              *
+* Authors: Gabe McNinch           -   gmcnin02                                *
+*          Alexander Tsuetaki     -   atsuet01                                *
+* Date Modified: 12/2/19                                                      *
+* Time Used:6hrs 15 mins: 1hr of advent, 15 mins planning,  5hrs solving       *
+* *****************************************************************************
+Acknowledgements: our classmate Michael N. gave the suggestion of changing 
+                  everything to run on arrays instead of Seq_T's
+
+
+notes: the halligan machine we used utilized the following
+
+cpu info:
+model name	: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+model name	: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+model name	: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+model name	: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+model name	: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+model name	: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+model name	: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+model name	: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+
+redhat-release:
+Red Hat Enterprise Linux Workstation release 7.7 (Maipo)
+
+gcc-version:
+gcc (GCC) 9.1.0

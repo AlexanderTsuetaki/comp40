@@ -1,0 +1,218 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include "readaline.h"
+#include "table.h"
+#include "list.h"
+#include "atom.h"
+#include "string.h"
+#include "mem.h"
+
+typedef enum { false, true } bool;
+
+void populate_table(int, char**, Table_T);
+void print_match(Table_T);
+void print_formated(char*,int);
+bool parse_str(char**, size_t len);
+bool is_char(char);
+static void vfree(const void*, void**, void*);
+
+struct Location {
+    char* filename;
+    int lineno;
+};
+
+int main(int argc, char** argv) {
+    // FILE *f = fopen("text.txt", "r");
+    // char *datapp;
+    // while(readaline(f, &datapp) > 0) {
+    //     printf("%s", datapp);
+    //     free(datapp);
+    // }
+    // fclose(f);
+    // (void) argc;
+    // (void) argv;
+    Table_T t = Table_new(8192, NULL, NULL);
+    populate_table(argc, argv, t);
+    print_match(t);
+    Table_map(t, vfree, NULL);
+    Table_free(&t);
+    return EXIT_SUCCESS;
+}
+
+
+void populate_table(int argc, char** argv, Table_T t) {
+    FILE *curr;
+    char *line;
+    List_T list;
+    int line_ct;
+    size_t char_ct;
+    if (argc > 1) {
+        for (int i = 1; i < argc; i++) {
+            curr = fopen(argv[i], "r");
+            if (curr == NULL){
+		    Table_free(&t); // NOT IN YOUR VERSION FIXES LEAK WHEN
+		                    //there is an improper input
+		    exit(EXIT_FAILURE);
+	    }
+            const char* temp_a;
+            line_ct = 1;
+            while ((char_ct = readaline(curr, &line)) > 0) {
+                //printf("Reading line %d\n", line_ct);
+                //printf("%s\n", line);
+                //printf("%s\t%d\n", (*loc).filename, (*loc).lineno);
+                if (parse_str(&line, char_ct) == true) {
+                    struct Location *loc = malloc(sizeof(struct Location));
+                    struct Location this_loc = {argv[i], line_ct};
+                    *loc = this_loc;
+                    //printf("Valid Sentence\n");
+                    temp_a = Atom_string(line);
+                    //printf("%s\n", temp_a);
+                    list = Table_get(t, temp_a);
+                    if (list == NULL) {
+                        Table_put(t, temp_a, List_list(loc, NULL));
+			
+                        //printf("PUT\n");
+                    }
+                    else Table_put(t, temp_a, List_push(list, loc));
+		    
+		}
+                line_ct++;
+            }
+	    free(line);
+            fclose(curr);
+        }
+    }
+}
+
+bool parse_str(char** s, size_t len) {
+    //s = s;
+    //char *new_line;
+    //printf("Length: %ld\n", strlen(*s));
+    //char buf[len];
+    size_t c_ct = 0;
+    bool is_word = false;
+    //size_t s_length = strlen(*s);
+    for (size_t i = 0; i < len; i++) {
+        char c = (*s)[i];
+        //printf("%c\n", c);
+        if (is_char(c) == true) {
+            if (is_word == false) {
+                is_word = true;
+                //printf("PUT:%c\n", c);
+            }
+            //(*s)[c_ct] = c;
+            (*s)[c_ct] = c;
+            c_ct++;
+        }
+        else if (is_word == true) {
+            is_word = false;
+            //(*s)[c_ct] = ' ';
+            (*s)[c_ct] = ' ';
+            c_ct++;
+        }
+    }
+    if (c_ct > 1) {
+        // memmove(*s, buf, c_ct);
+        // if (is_word == false) (*s)[c_ct - 1] = '\0';
+        // else (*s)[c_ct] = '\0';
+        size_t new_size;
+        if (c_ct == len) new_size = len + 1;
+        else new_size = c_ct + 1;
+        *s = realloc(*s, new_size * sizeof(char));
+        (*s)[new_size - 1] = '\0';
+        return true;
+    }
+    else {
+        free(*s);
+        return false;
+    }
+}
+
+bool is_char(char c) {
+    //printf("%c", c);
+    if ((c >= '0' && c <= '9') ||
+        (c >= 'A' && c <= 'Z') ||
+        (c >= 'a' && c <= 'z')) 
+        return true;
+    else return false;
+}
+
+void print_match(Table_T t) {
+	List_T list;
+	bool first = true;
+	void **array = Table_toArray(t, NULL);
+	int len = Table_length(t);
+	//printf("%d",len);
+	for (int i = 0; i < len * 2; i+= 2) {
+	    list = array[i+1];
+	    list = List_reverse(list);
+	    void *temp;
+	    struct Location* loc;
+	    //prints only if there is an actural match pair (fixed)  
+	    if(List_length(list) > 1){
+		 if(!first){ //added since previous version was not corectally
+			 printf("\n");//adding the newline (cant tell last
+		 }//instance group while running); 
+		 first = false;
+		 printf("%s\n", (char*)array[i]);
+		 //printing all words from a the list in the array;
+		 while (list != NULL) {
+			 list = List_pop(list, &temp);
+			 loc = temp;
+			 print_formated((*loc).filename, (*loc).lineno);
+			 free(loc);
+		 }
+	    }
+	    else{
+		    list = List_pop(list, &temp);
+		    loc = temp;
+		    free(loc);
+		}
+	    //free(temp);
+	    //free(list);
+	    
+	    List_free(&list);
+	}
+	printf("%d",len);
+	//Table_free(&t);
+	free(array);
+}
+
+
+//print_formated
+//arguments:
+//          filename: a string representing the name of the file a line is in
+//          linenum: a int representing the line number of a given line  
+//purpose: to formate the print out statement in such that there is a 20 space 
+//         buffer for letter, a 1 space spacer, and a 7 digit buffer for 
+//         line numbers.
+void print_formated(char * filename, int linenum){
+        int digits = 0;
+        int tempnum = linenum;
+        if(tempnum == 0)
+                tempnum++;
+        while(tempnum > 0){
+                tempnum = tempnum/10;
+                digits++;
+        }
+        int filename_length = 20-strlen(filename);//buffer for file name      
+        int number_length = 7-digits;//buffer for line number 
+        printf("%s", filename);
+        for(int i = 0; i < filename_length; i++){
+                printf("-");
+        }
+        printf("-");
+        for(int j = 0; j < number_length; j++){
+                printf("-");
+        }
+        printf("%d\n", linenum);
+}
+
+
+static void vfree(const void *key, void **value, void *cl) {
+    (void) key;
+    (void) cl;
+    (void) value;
+    //FREE(*value);
+    //List_free(*value);
+}
